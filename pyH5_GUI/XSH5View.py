@@ -6,7 +6,11 @@ from PyQt5.QtWidgets import (QWidget, QToolTip,
 QAction, qApp, QMenu, QGridLayout, QTreeWidget,  QTreeWidgetItem, QTableWidget,
  QLabel,  QTableWidgetItem,   QInputDialog, QLineEdit,  QHBoxLayout,    QCheckBox,
  QComboBox,  QActionGroup, QDialog, QInputDialog, QLineEdit,  QVBoxLayout, QGroupBox , QDialogButtonBox )
- 
+##################################################NEW
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+import matplotlib as mpl
+##################################################
 
 from PyQt5.QtGui import QFont ,  QIcon
 from PyQt5.QtCore import Qt
@@ -95,6 +99,14 @@ class mainWindow(QMainWindow):
         self.file_items_list_property={}
         self.file_items_list.tree.itemClicked.connect(self.item_clicked)
         #self.file_items_list.tree.itemDoubleClicked.connect(self.item_double_clicked)         
+        self.guiplot_grid_fromRow = 5
+        self.guiplot_grid_fromColumn = 1
+        self.guiplot_grid_rowSpan = 4
+        self.guiplot_grid_columnSpan = 4
+        self.testplot_grid_fromRow = 5
+        self.testplot_grid_fromColumn = 5
+        self.testplot_grid_rowSpan = 4
+        self.testplot_grid_columnSpan = 4
         # Make dataset table
         self.dataset_table = ht.titledTable('Values')        
         # Make attribute table
@@ -112,6 +124,7 @@ class mainWindow(QMainWindow):
         self.resetX_button = self.add_resetX_button()
         self.setlogX_box = self.add_setlogX_box()
         self.setlogY_box = self.add_setlogY_box()
+        self.matplotlib_test_button = self.add_matplotlib_test_button()
         #self.clr_plot_checkbox = self.add_clr_plot_box()
         self.clr_plot_button = self.add_clr_plot_button()
         self.resizeEvent = self.onresize
@@ -119,7 +132,9 @@ class mainWindow(QMainWindow):
         self.make_menu_bar()
         self.filename_label =  QLabel('H5FileName')
         ## Add plot window
-        self.guiplot = pg.PlotWidget()
+        self.guiplot = pg.PlotWidget() ##using pg
+        self.testplot = mpl.figure.Figure()
+        self.canvas = FigureCanvas(self.testplot)
         #self.guiplot = pg.ImageView()        
         # Add the created layouts and widgets to the window
         grid.addLayout(self.open_button,        1, 0, 1, 1,  QtCore.Qt.AlignLeft)       
@@ -130,7 +145,7 @@ class mainWindow(QMainWindow):
         grid.addLayout(self.clr_plot_button,     1, 4, 1, 1, QtCore.Qt.AlignLeft)  
         grid.addLayout(self.setX_button, 1, 8, 1, 1,QtCore.Qt.AlignLeft)
         grid.addLayout(self.resetX_button, 2, 8, 1, 1,QtCore.Qt.AlignLeft)  
-        
+        grid.addLayout(self.matplotlib_test_button, 2, 4, 1, 1, QtCore.Qt.AlignLeft)
         grid.addLayout(self.setlogX_box, 1, 7, 1, 1,QtCore.Qt.AlignLeft)
         grid.addLayout(self.setlogY_box, 2, 7, 1, 1,QtCore.Qt.AlignLeft)  
         
@@ -141,7 +156,12 @@ class mainWindow(QMainWindow):
         #data dataset table
         grid.addLayout(self.dataset_table.layout, 4, 1, 1, 8)
         ## Add guiplot window
-        grid.addWidget(self.guiplot, 5,  1,  4,   8 ) 
+        grid.addWidget(self.guiplot, 
+		self.guiplot_grid_fromRow, self.guiplot_grid_fromColumn,
+		self.guiplot_grid_rowSpan, self.guiplot_grid_columnSpan ) 
+        grid.addWidget(self.canvas, 
+		self.testplot_grid_fromRow, self.testplot_grid_fromColumn,
+		self.testplot_grid_rowSpan, self.testplot_grid_columnSpan ) 
         # attribute tabel
         grid.addLayout(self.attribute_table.layout, 7, 0, 2, 1)
         #grid.addWidget(self.attribute_table, 7, 0, 2, 1 )  
@@ -242,7 +262,7 @@ class mainWindow(QMainWindow):
         #self.dataset_table.table.setMinimumHeight(0.1*self.height())
         #self.dataset_table.table.setMaximumWidth( 0.3*self.height() )
         self.attribute_table.table.setMaximumWidth(0.3*self.width())
-        self.guiplot.setMinimumHeight( 0.6*self.height() )
+        #self.guiplot.setMinimumHeight( 0.6*self.height() )
         #self.guiplot.setMinimumHeight( 0.6*self.height() )
     def add_open_button(self):
         '''
@@ -270,6 +290,8 @@ class mainWindow(QMainWindow):
 
     def add_stack_plot_button(self):
         return self.add_generic_plot_button( plot_type = 'plot_stack',  button_name='Stack Plot')    
+    def add_matplotlib_test_button(self):
+        return self.add_generic_plot_button( plot_type='curve', button_name='Matlib Test')
     def add_plot_g2_button(self):
         return self.add_generic_plot_button( plot_type = 'g2',  button_name='Plot_g2')
     def add_plot_c12_button(self):

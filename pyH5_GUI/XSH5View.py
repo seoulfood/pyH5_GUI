@@ -80,6 +80,7 @@ class mainWindow(QMainWindow):
         #####################       
         
         self.PWT= PlotWidget(self)
+        self.MPWT = MATPlotWidget(self)
         self.initialise_user_interface()
         
         self.vstack_sampling = 20 
@@ -316,7 +317,8 @@ class mainWindow(QMainWindow):
                          'surface': self.PWT.plot_surface,
                          'image': self.PWT.plot_image,
                          'C12': self.PWT.plot_C12,
-                          'plot_stack': self.PWT.plot_stack,
+                         'plot_stack': self.PWT.plot_stack,
+                         'mat_curve': self.MPWT.plot_curve,
                          }  
         plot_btn.clicked.connect(  plot_type_dict[plot_type]  )
         button_section =  QHBoxLayout()
@@ -329,7 +331,7 @@ class mainWindow(QMainWindow):
         button_section =  QHBoxLayout()
         button_section.addWidget(self.setlogX_box_obj )
         return button_section
-    def click_setlogX_box (self, state):
+    def click_setlogX_box(self, state):
         if state == QtCore.Qt.Checked:
             self.logX_plot = True 
         else:
@@ -344,7 +346,7 @@ class mainWindow(QMainWindow):
         button_section =  QHBoxLayout()
         button_section.addWidget(self.setlogY_box_obj )
         return button_section
-    def click_setlogY_box (self, state):
+    def click_setlogY_box(self, state):
         if state == QtCore.Qt.Checked:
             self.logY_plot = True  
         else:

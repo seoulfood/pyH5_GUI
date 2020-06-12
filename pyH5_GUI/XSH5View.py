@@ -8,7 +8,6 @@ QAction, qApp, QMenu, QGridLayout, QTreeWidget,  QTreeWidgetItem, QTableWidget,
  QComboBox,  QActionGroup, QDialog, QInputDialog, QLineEdit,  QVBoxLayout, QGroupBox , QDialogButtonBox )
 ##################################################NEW
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 import matplotlib as mpl
 from matplotlib.figure import Figure
 ##################################################
@@ -130,6 +129,7 @@ class mainWindow(QMainWindow):
         self.matplotlib_test_button = self.add_matplotlib_test_button()
         #self.clr_plot_checkbox = self.add_clr_plot_box()
         self.clr_plot_button = self.add_clr_plot_button()
+        self.clr_mat_button = self.add_clr_mat_button()
         self.resizeEvent = self.onresize
         # Add 'extra' window components
         self.make_menu_bar()
@@ -145,10 +145,11 @@ class mainWindow(QMainWindow):
         grid.addLayout(self.plot_curve_button,   1, 1, 1, 1,QtCore.Qt.AlignLeft)
         grid.addLayout(self.plot_img_button,     1, 2, 1, 1,QtCore.Qt.AlignLeft)
         grid.addLayout(self.plot_surface_button, 1, 3, 1, 1,QtCore.Qt.AlignLeft)
-        grid.addLayout(self.clr_plot_button,     1, 4, 1, 1, QtCore.Qt.AlignLeft)  
+        grid.addLayout(self.clr_plot_button,     1, 4, 1, 1, QtCore.Qt.AlignLeft)
+        grid.addLayout(self.clr_mat_button,      2, 4, 1, 1, QtCore.Qt.AlignLeft)
         grid.addLayout(self.setX_button, 1, 8, 1, 1,QtCore.Qt.AlignLeft)
         grid.addLayout(self.resetX_button, 2, 8, 1, 1,QtCore.Qt.AlignLeft)  
-        grid.addLayout(self.matplotlib_test_button, 2, 4, 1, 1, QtCore.Qt.AlignLeft)
+        grid.addLayout(self.matplotlib_test_button, 2, 3, 1, 1, QtCore.Qt.AlignLeft)
         grid.addLayout(self.setlogX_box, 1, 7, 1, 1,QtCore.Qt.AlignLeft)
         grid.addLayout(self.setlogY_box, 2, 7, 1, 1,QtCore.Qt.AlignLeft)  
         
@@ -383,6 +384,12 @@ class mainWindow(QMainWindow):
         button_section =  QHBoxLayout()
         button_section.addWidget(self.clr_plot_button )
         return button_section
+    def add_clr_mat_button(self):
+        self.clr_mat_button = QPushButton("clear matlib plot")
+        self.clr_mat_button.clicked.connect(self.matplot_clear)
+        button_section = QHBoxLayout()
+        button_section.addWidget(self.clr_mat_button)
+        return button_section
 
     def guiplot_clear(self):
         if self.plot_type in plot_curve_type:
@@ -397,7 +404,12 @@ class mainWindow(QMainWindow):
             self.legend.scene().removeItem(  self.legend )
         except:
             pass
-    
+    def matplot_clear(self):
+        if self.plot_type in plot_curve_type or self.plot_type in plot_image_type:
+            print("trying to clear")
+            ax = self.testplot.add_subplot(111)
+            ax.clear()
+            self.canvas.draw()
         
     def add_q_box( self ):
         # Create textbox

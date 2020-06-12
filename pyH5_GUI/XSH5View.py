@@ -10,6 +10,7 @@ QAction, qApp, QMenu, QGridLayout, QTreeWidget,  QTreeWidgetItem, QTableWidget,
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 import matplotlib as mpl
+from matplotlib.figure import Figure
 ##################################################
 
 from PyQt5.QtGui import QFont ,  QIcon
@@ -38,7 +39,7 @@ except:
 import sip
 #from chx_format import *
 from Plot import *
- 
+from MATPlot import * 
 
 class mainWindow(QMainWindow):
     def __init__(self):
@@ -61,6 +62,7 @@ class mainWindow(QMainWindow):
         
         self.X = None        
         self.guiplot_count=0
+        self.testplot_count=0
         self.image_plot_count=0
         self.plot_type= 'curve'
         
@@ -134,7 +136,7 @@ class mainWindow(QMainWindow):
         self.filename_label =  QLabel('H5FileName')
         ## Add plot window
         self.guiplot = pg.PlotWidget() ##using pg
-        self.testplot = mpl.figure.Figure()
+        self.testplot = Figure()
         self.canvas = FigureCanvas(self.testplot)
         #self.guiplot = pg.ImageView()        
         # Add the created layouts and widgets to the window
@@ -292,7 +294,7 @@ class mainWindow(QMainWindow):
     def add_stack_plot_button(self):
         return self.add_generic_plot_button( plot_type = 'plot_stack',  button_name='Stack Plot')    
     def add_matplotlib_test_button(self):
-        return self.add_generic_plot_button( plot_type='curve', button_name='Matlib Test')
+        return self.add_generic_plot_button( plot_type = 'mat_curve', button_name='Matlib Test')
     def add_plot_g2_button(self):
         return self.add_generic_plot_button( plot_type = 'g2',  button_name='Plot_g2')
     def add_plot_c12_button(self):
@@ -318,7 +320,7 @@ class mainWindow(QMainWindow):
                          'image': self.PWT.plot_image,
                          'C12': self.PWT.plot_C12,
                          'plot_stack': self.PWT.plot_stack,
-                         'mat_curve': self.MPWT.plot_curve,
+                         'mat_curve': self.MPWT.plot_mat_curve,
                          }  
         plot_btn.clicked.connect(  plot_type_dict[plot_type]  )
         button_section =  QHBoxLayout()
@@ -383,13 +385,13 @@ class mainWindow(QMainWindow):
         return button_section
 
     def guiplot_clear(self):
-        if self.plot_type in ['curve', 'g2', 'qiq', 'plot_stack',]:
+        if self.plot_type in plot_curve_type:
             self.guiplot.clear()
             self.guiplot_count=0
-        elif self.plot_type in [ 'image']:
+        elif self.plot_type in plot_image_type:
             self.guiplot.clear()
             self.guiplot_count=0
-        elif self.plot_type in [ 'surface']:
+        elif self.plot_type in plot_surface_type:
             pass            
         try:
             self.legend.scene().removeItem(  self.legend )

@@ -10,6 +10,7 @@ QAction, qApp, QMenu, QGridLayout, QTreeWidget,  QTreeWidgetItem, QTableWidget,
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib as mpl
 from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 ##################################################
 
 from PyQt5.QtGui import QFont ,  QIcon
@@ -61,7 +62,7 @@ class mainWindow(QMainWindow):
         
         self.X = None        
         self.guiplot_count=0
-        self.testplot_count=0
+        self.testplot_count=1
         self.image_plot_count=0
         self.plot_type= 'curve'
         
@@ -101,14 +102,14 @@ class mainWindow(QMainWindow):
         self.file_items_list_property={}
         self.file_items_list.tree.itemClicked.connect(self.item_clicked)
         #self.file_items_list.tree.itemDoubleClicked.connect(self.item_double_clicked)         
-        self.guiplot_grid_fromRow = 5
+        self.guiplot_grid_fromRow = 6
         self.guiplot_grid_fromColumn = 1
         self.guiplot_grid_rowSpan = 4
         self.guiplot_grid_columnSpan = 4
-        self.testplot_grid_fromRow = 5
-        self.testplot_grid_fromColumn = 5
+        self.testplot_grid_fromRow = 6
+        self.testplot_grid_fromColumn = 1
         self.testplot_grid_rowSpan = 4
-        self.testplot_grid_columnSpan = 4
+        self.testplot_grid_columnSpan = 8
         # Make dataset table
         self.dataset_table = ht.titledTable('Values')        
         # Make attribute table
@@ -137,7 +138,9 @@ class mainWindow(QMainWindow):
         ## Add plot window
         self.guiplot = pg.PlotWidget() ##using pg
         self.testplot = Figure()
+        self.ax = self.testplot.add_subplot(111)
         self.canvas = FigureCanvas(self.testplot)
+        self.toolbar = NavigationToolbar(self.canvas, self)
         #self.guiplot = pg.ImageView()        
         # Add the created layouts and widgets to the window
         grid.addLayout(self.open_button,        1, 0, 1, 1,  QtCore.Qt.AlignLeft)       
@@ -159,10 +162,12 @@ class mainWindow(QMainWindow):
         grid.addLayout(self.file_items_list.datalayout, 4, 0, 3, 1)
         #data dataset table
         grid.addLayout(self.dataset_table.layout, 4, 1, 1, 8)
+        # Add toolbar
+        grid.addWidget(self.toolbar, 5, 1, 1, 8)
         ## Add guiplot window
-        grid.addWidget(self.guiplot, 
-		self.guiplot_grid_fromRow, self.guiplot_grid_fromColumn,
-		self.guiplot_grid_rowSpan, self.guiplot_grid_columnSpan ) 
+        #grid.addWidget(self.guiplot, 
+    		#self.guiplot_grid_fromRow, self.guiplot_grid_fromColumn,
+		#self.guiplot_grid_rowSpan, self.guiplot_grid_columnSpan ) 
         grid.addWidget(self.canvas, 
 		self.testplot_grid_fromRow, self.testplot_grid_fromColumn,
 		self.testplot_grid_rowSpan, self.testplot_grid_columnSpan ) 
@@ -262,10 +267,10 @@ class mainWindow(QMainWindow):
     ########End Deal with layout  
     def onresize(self, event):
         print('Here for resize')
-        self.file_items_list.tree.setMaximumWidth(0.3*self.width())
+        self.file_items_list.tree.setMaximumWidth(int(0.3*self.width()) )
         #self.dataset_table.table.setMinimumHeight(0.1*self.height())
         #self.dataset_table.table.setMaximumWidth( 0.3*self.height() )
-        self.attribute_table.table.setMaximumWidth(0.3*self.width())
+        self.attribute_table.table.setMaximumWidth(int(0.3*self.width()) )
         #self.guiplot.setMinimumHeight( 0.6*self.height() )
         #self.guiplot.setMinimumHeight( 0.6*self.height() )
     def add_open_button(self):
@@ -314,14 +319,14 @@ class mainWindow(QMainWindow):
 
     def add_generic_plot_button(self, plot_type, button_name):
         plot_btn =  QPushButton( button_name)        
-        plot_type_dict = {'curve': self.PWT.plot_curve,
+        plot_type_dict = {'curve': self.MPWT.plot_curve,
                          'g2': self.PWT.plot_g2,
                          'qiq': self.PWT.plot_qiq,
-                         'surface': self.PWT.plot_surface,
-                         'image': self.PWT.plot_image,
+                         'surface': self.MPWT.plot_surface,
+                         'image': self.MPWT.plot_image,
                          'C12': self.PWT.plot_C12,
                          'plot_stack': self.PWT.plot_stack,
-                         'mat_curve': self.MPWT.plot_mat_curve,
+                         'mat_curve': self.MPWT.plot_curve,
                          }  
         plot_btn.clicked.connect(  plot_type_dict[plot_type]  )
         button_section =  QHBoxLayout()
@@ -406,10 +411,15 @@ class mainWindow(QMainWindow):
             pass
     def matplot_clear(self):
         if self.plot_type in plot_curve_type or self.plot_type in plot_image_type:
-            print("trying to clear")
-            ax = self.testplot.add_subplot(111)
-            ax.clear()
+            #ax = self.testplot.add_subplot(111)
+            self.ax.clear()
             self.canvas.draw()
+            self.canvas.hide()
+            self.canvas.show()
+            self.testplot_count=0
+        else:
+            self.testplot.clear()
+            self.testplot_count=0
         
     def add_q_box( self ):
         # Create textbox

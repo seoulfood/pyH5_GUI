@@ -8,13 +8,15 @@ import matplotlib.pyplot as plt
 import random
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-
+from matplotlib.widgets import Slider
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+from PIL import Image
 
                              
 plot_curve_type = [ 'curve', 'g2', 'qiq', 'plot_stack', 'mat_curve' ]   # some particular format for curve plot 
 plot_image_type = ['image', 'c12']           # some particular format  for image plot
 plot_surface_type = ['surface']           # some particular format  for surfce plot
-
+image_colors = ['viridis', 'plasma', 'inferno', 'magma', 'cividis']
     
         
 class MATPlotWidget(   ):
@@ -94,7 +96,10 @@ class MATPlotWidget(   ):
         if plot_type in plot_curve_type :
             if self.mainWin.testplot_count==0:
                 self.mainWin.testplot = Figure()
+                self.mainWin.ax = self.mainWin.testplot.add_subplot(111)
                 self.mainWin.canvas = FigureCanvas(self.mainWin.testplot)
+                self.mainWin.toolbar = NavigationToolbar(self.mainWin.canvas, self.mainWin)
+                self.mainWin.grid.addWidget(self.mainWin.toolbar, 5, 1, 1, 8)
                 self.mainWin.grid.addWidget( self.mainWin.canvas, 
 			self.mainWin.testplot_grid_fromRow, self.mainWin.testplot_grid_fromColumn,
 			self.mainWin.testplot_grid_rowSpan, self.mainWin.testplot_grid_columnSpan)
@@ -107,8 +112,11 @@ class MATPlotWidget(   ):
         elif plot_type in plot_image_type: 
             self.get_colormap(  self.mainWin )  
             if self.mainWin.image_plot_count==0:
-                self.mainWin.testplot = Figure()
+                self.mainWin.testplot = plt.figure()
+                self.mainWin.ax = self.mainWin.testplot.add_subplot(111)
                 self.mainWin.canvas = FigureCanvas(self.mainWin.testplot)
+                self.mainWin.toolbar = NavigationToolbar(self.mainWin.canvas, self.mainWin)
+                self.mainWin.grid.addWidget(self.mainWin.toolbar, 5, 1, 1, 8)
                 self.mainWin.grid.addWidget( self.mainWin.canvas, 
 		    self.mainWin.testplot_grid_fromRow, self.mainWin.testplot_grid_fromColumn,
 		    self.mainWin.testplot_grid_rowSpan, self.mainWin.testplot_grid_columnSpan)
@@ -120,9 +128,8 @@ class MATPlotWidget(   ):
             
         elif plot_type  in plot_surface_type:
             self.get_colormap(  self.mainWin )     
-            self.mainWin.testplot = Figure()
-            self.mainWin.canvas = FigureCanvas(self.mainWin.testplot)
-            self.mainWin.grid.addWidget( self.mainWin.canvas, 
+            self.mainWin.testplot = gl.GLViewWidget()
+            self.mainWin.grid.addWidget( self.mainWin.testplot, 
 		self.mainWin.testplot_grid_fromRow, self.mainWin.testplot_grid_fromColumn,
 		self.mainWin.testplot_grid_rowSpan, self.mainWin.testplot_grid_columnSpan)
             self.mainWin.image_plot_count=0
@@ -178,10 +185,12 @@ class MATPlotWidget(   ):
                     if isinstance(leg, list):
                         leg = leg[:]
                    #####################################################NEW
-                    ax = self.mainWin.testplot.add_subplot(111)
-                    ax.clear()
-                    ax.plot(X, Y, '*-')
+                    #self.mainWin.ax = self.mainWin.testplot.add_subplot(111)
+                    self.mainWin.ax.clear()
+                    self.mainWin.ax.plot(X, Y, '*-')
                     self.mainWin.canvas.draw()
+                    self.mainWin.canvas.hide()##This and the line below are required to
+                    self.mainWin.canvas.show()##circumvent maxOS incompatibilities with pyqt5
                    #####################################################
                     j += 1
                     self.mainWin.testplot_count += 1
@@ -198,16 +207,18 @@ class MATPlotWidget(   ):
                     leg = leg[:]
                 #print(X.shape, Y.shape, leg )
                 #####################################################NEW
-                ax = self.mainWin.testplot.add_subplot(111)
+                #self.mainWin.ax = self.mainWin.testplot.add_subplot(111)
                 data = [random.random() for i in range(10)]
-                ax.clear()
-                ax.plot(X, Y, '*-')
+                self.mainWin.ax.clear()
+                self.mainWin.ax.plot(X, Y, '*-')
                 self.mainWin.canvas.draw()
+                self.mainWin.canvas.hide()##This and the line below are required to
+                self.mainWin.canvas.show()##circumvent maxOS incompatibilities with pyqt5
                 self.mainWin.testplot_count += 1
                 #####################################################               
    
 
-    def plot_generic_image( self, plot_type ):        
+    def plot_generic_image( self, plot_type ):
         self.configure_plot_type( plot_type  )
         shape = (self.mainWin.value.T).shape
         self.mainWin.hor_Npt= shape[0]
@@ -220,12 +231,13 @@ class MATPlotWidget(   ):
         #self.mainWin.legend =   self.mainWin.testplot.addLegend()
         #title = self.mainWin.current_base_filename + '-' + self.mainWin.current_item_path
         self.configure_plot_title(plot_type )  
-        print(  self.uid , self.legends )
-        self.title =  self.uid + '-' +  '%s'%self.legends 
+        #print(  self.uid , self.legends )
+        #self.title =  self.uid + '-' +  '%s'%self.legends 
         if plot_type == 'c12':
+            print("I know it's not the c12 type so what gives")
             Special_Plot( self.mainWin ).plot_c12( ) 
-        elif plot_type == 'image': 
-            #print('Should plot image here...###')
+        elif plot_type in plot_image_type: 
+            print('Should plot image here...###')
             nan_mask = ~np.isnan( self.mainWin.value )            
             image_min, image_max = np.min( self.mainWin.value[nan_mask] ), np.max( self.mainWin.value[nan_mask] )
             self.mainWin.min,self.mainWin.max=image_min, image_max
@@ -234,16 +246,26 @@ class MATPlotWidget(   ):
                 if image_min<=0:
                     image_min = 0.1*np.mean(np.abs( self.mainWin.value[nan_mask] ))
                 tmpData=np.where(self.mainWin.value<=0,1,self.mainWin.value)
-                self.mainWin.testplot.setImage(np.log10(tmpData),
-                                      levels=(np.log10( image_min),np.log10( image_max)),
-                                      pos=pos,
-                                      autoRange=True)
+                print('upper plotting')
+                #self.mainWin.ax = self.mainWin.testplot.add_subplot(111)
+                self.mainWin.ax.clear()
+                data = np.random.random([100,100])
+                cax = self.mainWin.ax.imshow(np.log10(self.mainWin.value), origin="lower") 
+                plt.colorbar(cax, orientation='vertical')
+                self.mainWin.canvas.draw()
+                self.mainWin.canvas.hide()
+                self.mainWin.canvas.show()
             else:
-                self.mainWin.testplot.setImage( self.mainWin.value ,
-                                       levels=( image_min, image_max),
-                                       pos=pos,
-                                       autoRange=True)
-            #print( self.mainWin.colorscale_string   )
+                print('lower plotting')
+                #self.mainWin.ax = self.mainWin.testplot.add_subplot(111)
+                self.mainWin.ax.clear()
+                data = np.random.random([100,100])
+                cax = self.mainWin.ax.imshow(self.mainWin.value, origin="lower") 
+                plt.colorbar(cax, orientation='vertical')
+                self.mainWin.canvas.draw()
+                self.mainWin.canvas.hide()
+                self.mainWin.canvas.show()
+        '''
             self.mainWin.plt.setLabels( left = 'Y', bottom='X')
             ax = self.mainWin.plt.getAxis('bottom')
             ax2 = self.mainWin.plt.getAxis('left')
@@ -256,6 +278,19 @@ class MATPlotWidget(   ):
         self.mainWin.plt.setTitle( title = self.title )
         self.mainWin.testplot.getView().invertY(False)
         self.mainWin.image_plot_count += 1
+        '''
+        
+    def plot_generic_image_offline(self, plot_type):
+        print('testing matplot image')
+        self.configure_plot_type( plot_type )
+        #self.mainWin.ax = self.mainWin.testplot.add_subplot(111)
+        self.mainWin.ax.clear()
+        data = np.random.random([100,100])
+        cax = self.mainWin.ax.imshow(data) 
+        plt.colorbar(cax)
+        self.mainWin.canvas.draw()
+        self.mainWin.canvas.hide()
+        self.mainWin.canvas.show()
 
     def plot_surface(self):
         '''TODOLIST'''
@@ -338,8 +373,7 @@ class MATPlotWidget(   ):
         
     
 
-
-    def plot_mat_curve( self ):  
+    def plot_curve( self ):  
         try:
             print( 'mat def curve here ------>')     
             return self.plot_generic_curve( 'mat_curve' )

@@ -229,13 +229,6 @@ class PlotWidget(   ):
                         leg = self.legends[ i - self.mainWin.min_col ]
                     if isinstance(leg, list):
                         leg = leg[:]
-                   #####################################################NEW
-                   # ax = self.mainWin.guiplot.add_subplot(111)
-                   # data = [random.random() for i in range(10)]
-                   # ax.clear()
-                   # ax.plot(X, Y, '*-')
-                   # self.canvas.draw()
-                   #####################################################
                     self.mainWin.guiplot.plot( X, Y,
                                 pen=( self.mainWin.guiplot_count+j,  10 ),
                                 symbolBrush=(self.mainWin.guiplot_count+j,  10) ,
@@ -261,22 +254,20 @@ class PlotWidget(   ):
                                 symbolSize = symbolSize ,
                                 name= self.uid + '-%s'%(  leg ) ,
                                      )
-                #####################################################NEW
-#                ax = self.mainWin.guiplot.add_subplot(111)
-#                data = [random.random() for i in range(10)]
-#                ax.clear()
-#                ax.plot(X, Y, '*-')
-#                self.canvas.draw()
-#                self.mainWin.guiplot_count += 1               
-                 #####################################################               
-   
+  
 
     def plot_generic_image( self, plot_type ):        
         self.configure_plot_type( plot_type  )
         shape = (self.mainWin.value.T).shape
+        data = np.random.random([100, 100])
+        self.mainWin.guiplot.setImage(data,
+            levels=(0, 1),
+            pos=[0,0],
+            autoRange=True)
         self.mainWin.hor_Npt= shape[0]
         self.mainWin.ver_Npt= shape[1]
         self.mainWin.xmin,self.mainWin.xmax,self.mainWin.ymin,self.mainWin.ymax=0,shape[0],0,shape[1]
+    
         try:
             self.mainWin.guiplot.getView().vb.scene().sigMouseMoved.connect(  self.image_mouseMoved   )
         except:
@@ -303,7 +294,7 @@ class PlotWidget(   ):
                                       pos=pos,
                                       autoRange=True)
             else:
-                self.mainWin.guiplot.setImage( self.mainWin.value ,
+               self.mainWin.guiplot.setImage( self.mainWin.value ,
                                        levels=( image_min, image_max),
                                        pos=pos,
                                        autoRange=True)
@@ -316,11 +307,11 @@ class PlotWidget(   ):
             dx = [(pos[i], '%i'%(tick[i])) for i in range( len(pos ))   ]
             ax.setTicks([dx, []])
             ax2.setTicks([dx, []] )
-        self.mainWin.guiplot.setColorMap( self.mainWin.cmap )
+        #self.mainWin.guiplot.setColorMap( self.mainWin.cmap )
         self.mainWin.plt.setTitle( title = self.title )
         self.mainWin.guiplot.getView().invertY(False)
         self.mainWin.image_plot_count += 1
-
+ 
     def plot_surface(self):
         '''TODOLIST'''
         print( 'here plot the surface...')

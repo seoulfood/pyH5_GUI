@@ -64,6 +64,7 @@ class mainWindow(QMainWindow):
         self.guiplot_count=0
         self.testplot_count=1
         self.image_plot_count=0
+        self.surface_plot_count = 0
         self.plot_type= 'curve'
         
         self.colormap_string = 'jet'
@@ -127,10 +128,9 @@ class mainWindow(QMainWindow):
         self.resetX_button = self.add_resetX_button()
         self.setlogX_box = self.add_setlogX_box()
         self.setlogY_box = self.add_setlogY_box()
-        self.matplotlib_test_button = self.add_matplotlib_test_button()
+        #self.matplotlib_test_button = self.add_matplotlib_test_button()
         #self.clr_plot_checkbox = self.add_clr_plot_box()
         self.clr_plot_button = self.add_clr_plot_button()
-        self.clr_mat_button = self.add_clr_mat_button()
         self.resizeEvent = self.onresize
         # Add 'extra' window components
         self.make_menu_bar()
@@ -141,6 +141,7 @@ class mainWindow(QMainWindow):
         self.ax = self.testplot.add_subplot(111)
         self.canvas = FigureCanvas(self.testplot)
         self.toolbar = NavigationToolbar(self.canvas, self)
+        self.cbWidget = None
         #self.guiplot = pg.ImageView()        
         # Add the created layouts and widgets to the window
         grid.addLayout(self.open_button,        1, 0, 1, 1,  QtCore.Qt.AlignLeft)       
@@ -149,10 +150,9 @@ class mainWindow(QMainWindow):
         grid.addLayout(self.plot_img_button,     1, 2, 1, 1,QtCore.Qt.AlignLeft)
         grid.addLayout(self.plot_surface_button, 1, 3, 1, 1,QtCore.Qt.AlignLeft)
         grid.addLayout(self.clr_plot_button,     1, 4, 1, 1, QtCore.Qt.AlignLeft)
-        grid.addLayout(self.clr_mat_button,      2, 4, 1, 1, QtCore.Qt.AlignLeft)
         grid.addLayout(self.setX_button, 1, 8, 1, 1,QtCore.Qt.AlignLeft)
         grid.addLayout(self.resetX_button, 2, 8, 1, 1,QtCore.Qt.AlignLeft)  
-        grid.addLayout(self.matplotlib_test_button, 2, 3, 1, 1, QtCore.Qt.AlignLeft)
+        #grid.addLayout(self.matplotlib_test_button, 2, 3, 1, 1, QtCore.Qt.AlignLeft)
         grid.addLayout(self.setlogX_box, 1, 7, 1, 1,QtCore.Qt.AlignLeft)
         grid.addLayout(self.setlogY_box, 2, 7, 1, 1,QtCore.Qt.AlignLeft)  
         
@@ -163,7 +163,7 @@ class mainWindow(QMainWindow):
         #data dataset table
         grid.addLayout(self.dataset_table.layout, 4, 1, 1, 8)
         # Add toolbar
-        grid.addWidget(self.toolbar, 5, 1, 1, 8)
+        grid.addWidget(self.toolbar, 5, 1, 1, 7)
         ## Add guiplot window
         #grid.addWidget(self.guiplot, 
     		#self.guiplot_grid_fromRow, self.guiplot_grid_fromColumn,
@@ -266,7 +266,7 @@ class mainWindow(QMainWindow):
             layout.itemAt(i).widget().close()
     ########End Deal with layout  
     def onresize(self, event):
-        print('Here for resize')
+        #print('Here for resize')
         self.file_items_list.tree.setMaximumWidth(int(0.3*self.width()) )
         #self.dataset_table.table.setMinimumHeight(0.1*self.height())
         #self.dataset_table.table.setMaximumWidth( 0.3*self.height() )
@@ -325,7 +325,7 @@ class mainWindow(QMainWindow):
                          'surface': self.MPWT.plot_surface,
                          'image': self.MPWT.plot_image,
                          'C12': self.PWT.plot_C12,
-                         'plot_stack': self.PWT.plot_stack,
+                         'plot_stack': self.MPWT.plot_stack,
                          'mat_curve': self.MPWT.plot_curve,
                          }  
         plot_btn.clicked.connect(  plot_type_dict[plot_type]  )
@@ -385,42 +385,34 @@ class mainWindow(QMainWindow):
         return button_section
     def add_clr_plot_button(self):
         self.clr_plot_button =   QPushButton("clear plot" )
-        self.clr_plot_button.clicked.connect(self.guiplot_clear)
+        self.clr_plot_button.clicked.connect(self.plot_clear)
         button_section =  QHBoxLayout()
         button_section.addWidget(self.clr_plot_button )
         return button_section
-    def add_clr_mat_button(self):
-        self.clr_mat_button = QPushButton("clear matlib plot")
-        self.clr_mat_button.clicked.connect(self.matplot_clear)
-        button_section = QHBoxLayout()
-        button_section.addWidget(self.clr_mat_button)
-        return button_section
 
-    def guiplot_clear(self):
-        if self.plot_type in plot_curve_type:
-            self.guiplot.clear()
-            self.guiplot_count=0
-        elif self.plot_type in plot_image_type:
-            self.guiplot.clear()
-            self.guiplot_count=0
-        elif self.plot_type in plot_surface_type:
-            pass            
-        try:
-            self.legend.scene().removeItem(  self.legend )
-        except:
-            pass
-    def matplot_clear(self):
+
+    def plot_clear(self):
         if self.plot_type in plot_curve_type or self.plot_type in plot_image_type:
-            #ax = self.testplot.add_subplot(111)
+            if self.plot_type in plot_image_type:
+                self.grid.removeWidget(self.MPWT.cb)
+                self.MPWT.cb.setWindowOpacity(0)
+                self.MPWT.cb.hide()
             self.ax.clear()
             self.canvas.draw()
             self.canvas.hide()
             self.canvas.show()
             self.testplot_count=0
         else:
-            self.testplot.clear()
-            self.testplot_count=0
-        
+            self.guiplot.clear()
+            self.surface_plot_count = 0
+            self.grid.removeWidget(self.testplot)
+            self.testplot.setWindowOpacity(0)
+            self.testplot.hide() 
+        try:
+            self.legend.scene().removeItem(  self.legend )
+        except:
+            pass
+       
     def add_q_box( self ):
         # Create textbox
         self.q_box = QLineEdit(   placeholderText="Please enter q-number (int) of two-time function."  )
@@ -449,9 +441,9 @@ class mainWindow(QMainWindow):
         self.image_plot_options_menu = self.view_menu.addMenu('&Image Plot Options')
         self.colormap_options_menu = self.image_plot_options_menu.addMenu('&Colormap')
         group = QActionGroup(    self.colormap_options_menu )
-        texts = ["default",  "jet", 'jet_extended', 'albula', 'albula_r', 'goldish', "viridis", 'spectrum', 'vge', 'vge_hdr',  ]
+        texts = image_colors 
         for text in texts:
-            action = QAction(text, self.colormap_options_menu, checkable=True, checked=text==texts[1])
+            action = QAction(text, self.colormap_options_menu, checkable=True, checked=text==texts[0])
             self.colormap_options_menu.addAction(action)
             group.addAction(action)
         group.setExclusive(True)
@@ -606,7 +598,7 @@ class mainWindow(QMainWindow):
         if self.current_item_path != '':
             hdf5_file  = self.current_hdf5_item
             if isinstance(hdf5_file, h5py.Dataset):
-                print( 'shows dataset-------------->')
+                #print( 'shows dataset-------------->')
                 self.group_data = False
                 #self.current_dataset = self.item_path.split('/')[-1]				
                 shape = hdf5_file.shape
@@ -697,7 +689,7 @@ class mainWindow(QMainWindow):
         self.attribute_table.clear()
         self.get_filename_selected()
         if self.current_item_path != '':    
-            print('Here shows the attributes')
+            #print('Here shows the attributes')
             hdf5_file  =   self.current_hdf5_item
             try:
                 attributes = list(hdf5_file.attrs.items())

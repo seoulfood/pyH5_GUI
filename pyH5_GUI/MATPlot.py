@@ -1,7 +1,7 @@
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 import numpy as np
-from PyQt5.QtWidgets import (QWidget, QToolTip, QMainWindow, )
+from PyQt5.QtWidgets import * #(QWidget, QToolTip, QMainWindow, QRadioButton)
 from ColorMap import (cmap_cyclic_spectrum, cmap_jet_extended, cmap_vge, cmap_vge_hdr,
                       cmap_albula, cmap_albula_r,cmap_hdr_goldish , color_map_dict )      
 import matplotlib.pyplot as plt
@@ -16,7 +16,7 @@ from PIL import Image
 plot_curve_type = [ 'curve', 'g2', 'qiq', 'plot_stack', 'mat_curve' ]   # some particular format for curve plot 
 plot_image_type = ['image', 'c12']           # some particular format  for image plot
 plot_surface_type = ['surface']           # some particular format  for surfce plot
-image_colors = ['viridis', 'plasma', 'inferno', 'magma', 'cividis']
+image_colors = ['jet', 'viridis', 'plasma', 'inferno', 'magma', 'cividis']
     
         
 class MATPlotWidget(   ):
@@ -43,7 +43,7 @@ class MATPlotWidget(   ):
                                       'goldish', "viridis", 'spectrum', 'vge', 'vge_hdr',]:
              self.mainWin.colormap =  color_map_dict[self.mainWin.colormap_string]
              cmap = self.generatePgColormap(  self.mainWin.colormap   )
-             print('the color string is: %s.'%self.mainWin.colormap_string)
+             #print('the color string is: %s.'%self.mainWin.colormap_string)
         else:
             pass
         self.mainWin.cmap = cmap
@@ -99,7 +99,7 @@ class MATPlotWidget(   ):
                 self.mainWin.ax = self.mainWin.testplot.add_subplot(111)
                 self.mainWin.canvas = FigureCanvas(self.mainWin.testplot)
                 self.mainWin.toolbar = NavigationToolbar(self.mainWin.canvas, self.mainWin)
-                self.mainWin.grid.addWidget(self.mainWin.toolbar, 5, 1, 1, 8)
+                self.mainWin.grid.addWidget(self.mainWin.toolbar, 5, 1, 1, 7)
                 self.mainWin.grid.addWidget( self.mainWin.canvas, 
 			self.mainWin.testplot_grid_fromRow, self.mainWin.testplot_grid_fromColumn,
 			self.mainWin.testplot_grid_rowSpan, self.mainWin.testplot_grid_columnSpan)
@@ -110,24 +110,20 @@ class MATPlotWidget(   ):
             self.mainWin.image_plot_count=0
             
         elif plot_type in plot_image_type: 
-            self.get_colormap(  self.mainWin )  
             if self.mainWin.image_plot_count==0:
                 self.mainWin.testplot = plt.figure()
                 self.mainWin.ax = self.mainWin.testplot.add_subplot(111)
                 self.mainWin.canvas = FigureCanvas(self.mainWin.testplot)
+                self.add_image_color_options()
                 self.mainWin.toolbar = NavigationToolbar(self.mainWin.canvas, self.mainWin)
-                self.mainWin.grid.addWidget(self.mainWin.toolbar, 5, 1, 1, 8)
+                self.mainWin.grid.addWidget(self.mainWin.toolbar, 5, 1, 1, 7)
                 self.mainWin.grid.addWidget( self.mainWin.canvas, 
 		    self.mainWin.testplot_grid_fromRow, self.mainWin.testplot_grid_fromColumn,
 		    self.mainWin.testplot_grid_rowSpan, self.mainWin.testplot_grid_columnSpan)
             self.mainWin.testplot_count=0              
-            try:
-                self.mainWin.CurCrossHair.clear() 
-            except:
-                pass                
             
         elif plot_type  in plot_surface_type:
-            self.get_colormap(  self.mainWin )     
+            #self.get_colormap(  self.mainWin )     
             self.mainWin.testplot = gl.GLViewWidget()
             self.mainWin.grid.addWidget( self.mainWin.testplot, 
 		self.mainWin.testplot_grid_fromRow, self.mainWin.testplot_grid_fromColumn,
@@ -142,12 +138,8 @@ class MATPlotWidget(   ):
         shape = np.shape(self.mainWin.value)
         Ns = len(shape) 
         self.configure_plot_title(   plot_type )    
+        self.mainWin.testplot_count += 1
         #print( self.uid, self.legends )
-        ##################
-        symbolSize = 6
-        ##########################
-        
-        #print('here 333333333333')
         #print( self.mainWin.value.shape )
             
         self.mainWin.setX_Special_flag = False    ##if self.mainWin.setX_flag is True, self.mainWin.X is not None,
@@ -186,14 +178,13 @@ class MATPlotWidget(   ):
                         leg = leg[:]
                    #####################################################NEW
                     #self.mainWin.ax = self.mainWin.testplot.add_subplot(111)
-                    self.mainWin.ax.clear()
-                    self.mainWin.ax.plot(X, Y, '*-')
+                    self.mainWin.ax.plot(X, Y, '*-', label=self.mainWin.testplot_count)
+                    self.mainWin.ax.legend()
                     self.mainWin.canvas.draw()
                     self.mainWin.canvas.hide()##This and the line below are required to
                     self.mainWin.canvas.show()##circumvent maxOS incompatibilities with pyqt5
                    #####################################################
                     j += 1
-                    self.mainWin.testplot_count += 1
             else: # for 1d data we plot a row
                 if Ns > 1:
                     Y = self.mainWin.value[ self.mainWin.min_row:self.mainWin.max_row, self.mainWin.min_col ]
@@ -206,16 +197,12 @@ class MATPlotWidget(   ):
                 if isinstance(leg, list):
                     leg = leg[:]
                 #print(X.shape, Y.shape, leg )
-                #####################################################NEW
-                #self.mainWin.ax = self.mainWin.testplot.add_subplot(111)
-                data = [random.random() for i in range(10)]
-                self.mainWin.ax.clear()
-                self.mainWin.ax.plot(X, Y, '*-')
+                
+                self.mainWin.ax.plot(X, Y, '*-', label=self.mainWin.testplot_count)
+                self.mainWin.ax.legend()
                 self.mainWin.canvas.draw()
                 self.mainWin.canvas.hide()##This and the line below are required to
                 self.mainWin.canvas.show()##circumvent maxOS incompatibilities with pyqt5
-                self.mainWin.testplot_count += 1
-                #####################################################               
    
 
     def plot_generic_image( self, plot_type ):
@@ -234,10 +221,9 @@ class MATPlotWidget(   ):
         #print(  self.uid , self.legends )
         #self.title =  self.uid + '-' +  '%s'%self.legends 
         if plot_type == 'c12':
-            print("I know it's not the c12 type so what gives")
             Special_Plot( self.mainWin ).plot_c12( ) 
         elif plot_type in plot_image_type: 
-            print('Should plot image here...###')
+            #print('Should plot image here...###')
             nan_mask = ~np.isnan( self.mainWin.value )            
             image_min, image_max = np.min( self.mainWin.value[nan_mask] ), np.max( self.mainWin.value[nan_mask] )
             self.mainWin.min,self.mainWin.max=image_min, image_max
@@ -246,55 +232,20 @@ class MATPlotWidget(   ):
                 if image_min<=0:
                     image_min = 0.1*np.mean(np.abs( self.mainWin.value[nan_mask] ))
                 tmpData=np.where(self.mainWin.value<=0,1,self.mainWin.value)
-                print('upper plotting')
-                #self.mainWin.ax = self.mainWin.testplot.add_subplot(111)
                 self.mainWin.ax.clear()
-                data = np.random.random([100,100])
-                cax = self.mainWin.ax.imshow(np.log10(self.mainWin.value), origin="lower") 
-                plt.colorbar(cax, orientation='vertical')
+                self.cax = self.mainWin.ax.imshow(np.log10(self.mainWin.value),cmap=self.mainWin.colormap_string, origin="lower") 
+                self.colorbar = self.mainWin.testplot.colorbar(self.cax, orientation='vertical')
                 self.mainWin.canvas.draw()
                 self.mainWin.canvas.hide()
                 self.mainWin.canvas.show()
             else:
-                print('lower plotting')
-                #self.mainWin.ax = self.mainWin.testplot.add_subplot(111)
                 self.mainWin.ax.clear()
-                data = np.random.random([100,100])
-                cax = self.mainWin.ax.imshow(self.mainWin.value, origin="lower") 
-                plt.colorbar(cax, orientation='vertical')
+                self.cax = self.mainWin.ax.imshow(self.mainWin.value, cmap=self.mainWin.colormap_string, origin="lower") 
+                self.colorbar = self.mainWin.testplot.colorbar(self.cax, orientation='vertical')
                 self.mainWin.canvas.draw()
                 self.mainWin.canvas.hide()
                 self.mainWin.canvas.show()
-        '''
-            self.mainWin.plt.setLabels( left = 'Y', bottom='X')
-            ax = self.mainWin.plt.getAxis('bottom')
-            ax2 = self.mainWin.plt.getAxis('left')
-            pos = np.int_(np.linspace(0, self.mainWin.value.shape[0], 5 ))
-            tick = np.int_(np.linspace(0, self.mainWin.value.shape[0], 5 ))
-            dx = [(pos[i], '%i'%(tick[i])) for i in range( len(pos ))   ]
-            ax.setTicks([dx, []])
-            ax2.setTicks([dx, []] )
-        self.mainWin.testplot.setColorMap( self.mainWin.cmap )
-        self.mainWin.plt.setTitle( title = self.title )
-        self.mainWin.testplot.getView().invertY(False)
-        self.mainWin.image_plot_count += 1
-        '''
-        
-    def plot_generic_image_offline(self, plot_type):
-        print('testing matplot image')
-        self.configure_plot_type( plot_type )
-        #self.mainWin.ax = self.mainWin.testplot.add_subplot(111)
-        self.mainWin.ax.clear()
-        data = np.random.random([100,100])
-        cax = self.mainWin.ax.imshow(data) 
-        plt.colorbar(cax)
-        self.mainWin.canvas.draw()
-        self.mainWin.canvas.hide()
-        self.mainWin.canvas.show()
-
     def plot_surface(self):
-        '''TODOLIST'''
-        print( 'here plot the surface...')
         plot_type = 'surface'
         self.configure_plot_type(  plot_type  )
         title = self.mainWin.current_base_filename + '-' + self.mainWin.current_item_path
@@ -375,40 +326,41 @@ class MATPlotWidget(   ):
 
     def plot_curve( self ):  
         try:
-            print( 'mat def curve here ------>')     
+            #print( 'plot curve here ------>')     
+            self.mainWin.plot_clear()
             return self.plot_generic_curve( 'mat_curve' )
         except:
             pass
-    def plot_mat_stack( self ):          
+    def plot_stack( self ):          
         try:
-            print( 'stack plot here ------>')      
+            #print( 'stack plot here ------>')      
             return self.plot_generic_curve( 'plot_stack' )
         except:
             pass        
     def plot_mat_g2( self ):          
         try:
-            print( 'g2 here ------>')      
+            #print( 'g2 here ------>')      
             return self.plot_generic_curve( 'g2' )
         except:
             pass
     def plot_mat_qiq( self ):
         
         try:
-            print( 'qiq here ------>') 
+            #print( 'qiq here ------>') 
             return self.plot_generic_curve( 'qiq' )
         except:
             pass
     def plot_image( self ):
         
         try:
-            print( 'image here ------>') 
+            #print( 'image here ------>') 
             self.plot_generic_image( 'image')
         except:
             pass
     def plot_C12( self ):
         
         try:
-            print( 'C12 here ------>') 
+            #print( 'C12 here ------>') 
             return self.plot_generic_image( 'c12' )
         except:
             pass       
@@ -431,4 +383,31 @@ class MATPlotWidget(   ):
             #return s[0].decode('utf-8')
         else:
             return np.char.decode( s )        
+
+    def add_image_color_options(self):
+        self.cb = QComboBox()
+        self.cb.setPlaceholderText('Color Scheme')
+        self.cb.addItems(image_colors)
+        self.cb.currentIndexChanged.connect(self.colorClick)
+        self.mainWin.cbWidget = self.mainWin.grid.addWidget(self.cb, 5, 8, 1, 1)
+
+
+    def colorClick(self):
+        self.mainWin.colormap_string = image_colors[self.cb.currentIndex()]
+        #self.mainWin.plot_clear()
+        #self.plot_image()
+        self.mainWin.ax.clear()
+        if self.mainWin.colorscale_string == 'log':
+            self.cax = self.mainWin.ax.imshow(np.log10(self.mainWin.value), cmap=self.mainWin.colormap_string, origin='lower')
+            self.colorbar.remove()
+            self.colorbar = self.mainWin.testplot.colorbar(self.cax)
+        else:            
+            self.cax = self.mainWin.ax.imshow(self.mainWin.value, cmap=self.mainWin.colormap_string, origin='lower')
+            self.colorbar.remove()
+            self.colorbar = self.mainWin.testplot.colorbar(self.cax)
+        # refresh canvas
+        self.mainWin.canvas.draw()
+        self.mainWin.canvas.hide()
+        self.mainWin.canvas.show()
+
 

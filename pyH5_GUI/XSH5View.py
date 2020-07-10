@@ -103,15 +103,17 @@ class mainWindow(QMainWindow):
         self.file_items_list_property={}
         self.file_items_list.tree.itemClicked.connect(self.item_clicked)
         #self.file_items_list.tree.itemDoubleClicked.connect(self.item_double_clicked)         
-        self.guiplot_grid_fromRow = 6
+        self.guiplot_grid_fromRow = 5
         self.guiplot_grid_fromColumn = 1
-        self.guiplot_grid_rowSpan = 4
-        self.guiplot_grid_columnSpan = 4
+        self.guiplot_grid_rowSpan = 5
+        self.guiplot_grid_columnSpan = 8
         self.testplot_grid_fromRow = 6
         self.testplot_grid_fromColumn = 1
         self.testplot_grid_rowSpan = 4
         self.testplot_grid_columnSpan = 8
-        # Make dataset table
+        self.plotLibrary = 'matplotlib'
+        self.plot_buttons_array = []
+       # Make dataset table
         self.dataset_table = ht.titledTable('Values')        
         # Make attribute table
         self.attribute_table =ht.titledTable('Attribute') # QTableWidget()
@@ -121,14 +123,11 @@ class mainWindow(QMainWindow):
         # Initialise all buttons
         self.open_button = self.add_open_button()
         self.dataset_type_box = self.add_dataset_type_box()
-        self.plot_curve_button = self.add_plot_curve_button()
-        self.plot_img_button = self.add_plot_img_button()
-        self.plot_surface_button = self.add_plot_surface_button()        
+        self.add_all_plot_buttons()
         self.setX_button = self.add_setX_button()
         self.resetX_button = self.add_resetX_button()
         self.setlogX_box = self.add_setlogX_box()
         self.setlogY_box = self.add_setlogY_box()
-        #self.matplotlib_test_button = self.add_matplotlib_test_button()
         #self.clr_plot_checkbox = self.add_clr_plot_box()
         self.clr_plot_button = self.add_clr_plot_button()
         self.resizeEvent = self.onresize
@@ -146,13 +145,9 @@ class mainWindow(QMainWindow):
         # Add the created layouts and widgets to the window
         grid.addLayout(self.open_button,        1, 0, 1, 1,  QtCore.Qt.AlignLeft)       
         grid.addLayout(self.dataset_type_box,    1, 0, 1, 1, QtCore.Qt.AlignRight)
-        grid.addLayout(self.plot_curve_button,   1, 1, 1, 1,QtCore.Qt.AlignLeft)
-        grid.addLayout(self.plot_img_button,     1, 2, 1, 1,QtCore.Qt.AlignLeft)
-        grid.addLayout(self.plot_surface_button, 1, 3, 1, 1,QtCore.Qt.AlignLeft)
         grid.addLayout(self.clr_plot_button,     1, 4, 1, 1, QtCore.Qt.AlignLeft)
         grid.addLayout(self.setX_button, 1, 8, 1, 1,QtCore.Qt.AlignLeft)
         grid.addLayout(self.resetX_button, 2, 8, 1, 1,QtCore.Qt.AlignLeft)  
-        #grid.addLayout(self.matplotlib_test_button, 2, 3, 1, 1, QtCore.Qt.AlignLeft)
         grid.addLayout(self.setlogX_box, 1, 7, 1, 1,QtCore.Qt.AlignLeft)
         grid.addLayout(self.setlogY_box, 2, 7, 1, 1,QtCore.Qt.AlignLeft)  
         
@@ -164,10 +159,12 @@ class mainWindow(QMainWindow):
         grid.addLayout(self.dataset_table.layout, 4, 1, 1, 8)
         # Add toolbar
         grid.addWidget(self.toolbar, 5, 1, 1, 7)
-        ## Add guiplot window
-        #grid.addWidget(self.guiplot, 
-    		#self.guiplot_grid_fromRow, self.guiplot_grid_fromColumn,
-		#self.guiplot_grid_rowSpan, self.guiplot_grid_columnSpan ) 
+        ## Add guiplot window, it's not the default so hide
+        grid.addWidget(self.guiplot, 
+    		self.guiplot_grid_fromRow, self.guiplot_grid_fromColumn,
+		self.guiplot_grid_rowSpan, self.guiplot_grid_columnSpan ) 
+        self.guiplot.setWindowOpacity(0)
+        self.guiplot.hide() 
         grid.addWidget(self.canvas, 
 		self.testplot_grid_fromRow, self.testplot_grid_fromColumn,
 		self.testplot_grid_rowSpan, self.testplot_grid_columnSpan ) 
@@ -297,10 +294,23 @@ class mainWindow(QMainWindow):
         self.current_dataset_type = self.dataset_type_obj.currentText()
         #print( self.dataset_type_obj_string , self.dataset_type_obj.currentText() )
 
+    def add_all_plot_buttons(self):
+        self.plot_curve_button = self.add_plot_curve_button()
+        self.plot_img_button = self.add_plot_img_button()
+        if self.plotLibrary != 'matplotlib':
+            self.plot_surface_button = self.add_plot_surface_button()        
+            self.grid.addLayout(self.plot_surface_button, 1, 3, 1, 1,QtCore.Qt.AlignLeft)
+        else:
+            self.plot_acr_datasets_button = self.add_plot_acr_datasets_button()
+            self.grid.addLayout(self.plot_acr_datasets_button, 2, 3, 1, 1,QtCore.Qt.AlignLeft)
+        self.grid.addLayout(self.plot_curve_button,   1, 1, 1, 1,QtCore.Qt.AlignLeft)
+        self.grid.addLayout(self.plot_img_button,     1, 2, 1, 1,QtCore.Qt.AlignLeft)
+
+
     def add_stack_plot_button(self):
         return self.add_generic_plot_button( plot_type = 'plot_stack',  button_name='Stack Plot')    
-    def add_matplotlib_test_button(self):
-        return self.add_generic_plot_button( plot_type = 'mat_curve', button_name='Matlib Test')
+    def add_plot_acr_datasets_button(self):
+        return self.add_generic_plot_button( plot_type = 'stack_across', button_name='Test')
     def add_plot_g2_button(self):
         return self.add_generic_plot_button( plot_type = 'g2',  button_name='Plot_g2')
     def add_plot_c12_button(self):
@@ -315,23 +325,35 @@ class mainWindow(QMainWindow):
         return self.add_generic_plot_button( plot_type = 'image',  button_name='Plot_Image')
     def add_plot_surface_button(self):
         return self.add_generic_plot_button( plot_type = 'surface',  button_name='Plot_Surface')
-        
 
     def add_generic_plot_button(self, plot_type, button_name):
-        plot_btn =  QPushButton( button_name)        
-        plot_type_dict = {'curve': self.MPWT.plot_curve,
+        plot_btn =  QPushButton( button_name)
+        pg_plot_type_dict = {'curve': self.PWT.plot_curve,
+                         'g2': self.PWT.plot_g2,
+                         'qiq': self.PWT.plot_qiq,
+                         'surface': self.PWT.plot_surface,
+                         'image': self.PWT.plot_image,
+                         'C12': self.PWT.plot_C12,
+                         'plot_stack': self.PWT.plot_stack,
+                         'mat_curve': self.PWT.plot_curve,
+                         } 
+        mat_plot_type_dict = {'curve': self.MPWT.plot_curve,
                          'g2': self.PWT.plot_g2,
                          'qiq': self.PWT.plot_qiq,
                          'surface': self.MPWT.plot_surface,
                          'image': self.MPWT.plot_image,
                          'C12': self.PWT.plot_C12,
                          'plot_stack': self.MPWT.plot_stack,
-                         'mat_curve': self.MPWT.plot_curve,
-                         }  
-        plot_btn.clicked.connect(  plot_type_dict[plot_type]  )
+                         'stack_across': self.MPWT.plot_across,
+                         }
+        if self.plotLibrary == 'pyqtgraph':
+            plot_btn.clicked.connect(  pg_plot_type_dict[plot_type]   )
+        if self.plotLibrary == 'matplotlib':
+            plot_btn.clicked.connect(  mat_plot_type_dict[plot_type]  )
         button_section =  QHBoxLayout()
         button_section.addWidget(plot_btn)
-        return button_section    
+        self.plot_buttons_array.append(plot_btn)
+        return button_section  
 
     def add_setlogX_box(self):
         self.setlogX_box_obj =   QCheckBox("logX" )
@@ -392,22 +414,23 @@ class mainWindow(QMainWindow):
 
 
     def plot_clear(self):
-        if self.plot_type in plot_curve_type or self.plot_type in plot_image_type:
-            if self.plot_type in plot_image_type:
-                self.grid.removeWidget(self.MPWT.cb)
-                self.MPWT.cb.setWindowOpacity(0)
-                self.MPWT.cb.hide()
-            self.ax.clear()
-            self.canvas.draw()
-            self.canvas.hide()
-            self.canvas.show()
-            self.testplot_count=0
-        else:
+        if self.plotLibrary == 'matplotlib':
+            if self.plot_type in plot_curve_type or self.plot_type in plot_image_type:
+                if self.plot_type in plot_image_type:
+                    self.grid.removeWidget(self.MPWT.cb)
+                    self.MPWT.cb.setWindowOpacity(0)
+                    self.MPWT.cb.hide()
+                self.ax.clear()
+                self.canvas.draw()
+                self.canvas.hide()
+                self.canvas.show()
+                self.testplot_count=0
+        elif self.plotLibrary == 'pyqtgraph':
             self.guiplot.clear()
-            self.surface_plot_count = 0
-            self.grid.removeWidget(self.testplot)
-            self.testplot.setWindowOpacity(0)
-            self.testplot.hide() 
+            #self.surface_plot_count = 0
+            #self.grid.removeWidget(self.testplot)
+            #self.guiplot.setWindowOpacity(0)
+            #self.guiplot.hide() 
         try:
             self.legend.scene().removeItem(  self.legend )
         except:
@@ -438,6 +461,16 @@ class mainWindow(QMainWindow):
         ## Create a view manu
         self.view_menu = menubar.addMenu('&View')
         #self.view_menu.setShortcut('Alt+v')
+        self.plot_type_options_menu = self.view_menu.addMenu('&Plot Library') 
+        group = QActionGroup(self.plot_type_options_menu)
+        texts = ["matplotlib", "pyqtgraph"]
+        for text in texts:
+            action = QAction(text, self.plot_type_options_menu, checkable=True, checked=text==texts[0])
+            self.plot_type_options_menu.addAction(action)
+            group.addAction(action)
+        group.setExclusive(True)
+        group.triggered.connect(self.onTriggered_plotLibrary)
+         
         self.image_plot_options_menu = self.view_menu.addMenu('&Image Plot Options')
         self.colormap_options_menu = self.image_plot_options_menu.addMenu('&Colormap')
         group = QActionGroup(    self.colormap_options_menu )
@@ -457,7 +490,6 @@ class mainWindow(QMainWindow):
             group.addAction(action)
         group.setExclusive(True)
         group.triggered.connect(self.onTriggered_colorscale)      
-        
         self.display_image_data_options_menu = self.view_menu.addMenu('&Display Image Data')
         show_image_data_action = QAction('show data', self, checkable=True, checked=False)
         show_image_data_action.triggered.connect(self.onTriggered_show_image_data)
@@ -498,6 +530,31 @@ class mainWindow(QMainWindow):
     def onTriggered_colorscale(self, action):
         #print(action.text())
         self.colorscale_string = action.text()
+    def onTriggered_plotLibrary(self, action):
+        self.plotLibrary = action.text()
+        for i in range(len(self.plot_buttons_array)):
+            button_to_remove = self.plot_buttons_array.pop()
+            self.grid.removeWidget(button_to_remove)
+            button_to_remove.setWindowOpacity(0)
+            button_to_remove.hide()
+        if action.text() == 'matplotlib':
+            self.toolbar.setWindowOpacity(100)
+            self.toolbar.show()
+            self.canvas.setWindowOpacity(100)
+            self.canvas.show()
+        else:
+            self.toolbar.setWindowOpacity(0)
+            self.toolbar.hide()
+            self.canvas.setWindowOpacity(0)
+            self.canvas.hide()
+        if action.text() == 'pyqtgraph':
+            self.guiplot.setWindowOpacity(100)
+            self.guiplot.show()
+        else:
+            self.guiplot.setWindowOpacity(0)
+            self.guiplot.hide()
+        self.add_all_plot_buttons()
+        self.initialise_layout()
     def show_about_menu(self):
         '''
         Shows the about menu by initialising an about_window object. This class is described in _window_classes.py '''
@@ -582,6 +639,7 @@ class mainWindow(QMainWindow):
         self.item = self.file_items_list.tree.currentItem()  
         self.current_full_filename = self.item.text(1)   
         self.current_group_name = self.full_filename_dict[ self.current_full_filename  ]
+        print("in get filename selected:", self.current_full_filename)
         self.current_hdf5 = h5py.File(self.current_full_filename,'r')
         self.current_base_filename = self.current_full_filename.split('/')[-1]
         self.current_item_path  = self.item.text(2)            

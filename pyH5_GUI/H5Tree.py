@@ -62,6 +62,7 @@ class tree(QWidget):
         self.tree.setHeaderItem(header)
         self.datalayout.addWidget(self.tree)
         self.group_root = None
+        self.file_array = []
     def clear(self):
         self.tree.clear()
         
@@ -74,7 +75,7 @@ class tree(QWidget):
         self.h5_file_path = h5file
         self.f = h5py.File(h5file,'r')
         self.filename = self.f.filename.split('/')[-1]
-        
+        self.file_array.append(self.filename)
         if group is None:
             self.tree_root = QTreeWidgetItem(self.tree,[self.filename,self.h5_file_path,'']) 
             self.add_branch(self.tree_root,self.f)
@@ -94,6 +95,10 @@ class tree(QWidget):
     def add_branch(self,tree_root,h5file):
         for _ in h5file.keys():
             #print(_)
+            #print("This branch has these arguments")
+            #print("\t", str(h5file[_].name).split('/')[-1])#This is the 'leaf' name
+            #print("\t", str(self.h5_file_path))#This is the file name location
+            #print("\t", str(h5file[_].name))#This is the path name within the file, doesn't include the file name, includes the leaf
             branch = QTreeWidgetItem([str(h5file[_].name).split('/')[-1],
                                       str(self.h5_file_path),
                                       str(h5file[_].name)])
@@ -104,7 +109,11 @@ class tree(QWidget):
     @pyqtSlot(QTreeWidgetItem,int)
     def onItemClicked(self,item):
         print(self.filename,item.text(2))
-        
+
+    def printTree(self):
+        print('here are the files', self.file_array)  
+        print('there are', self.tree.topLevelItemCount(), 'files')
+        print('name is:', self.tree.topLevelItem(0))
 
 
 class titledTable():
@@ -139,5 +148,4 @@ class titledTable():
             numcols = value_shape[1]
 
         return numcols
-
 

@@ -11,9 +11,10 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.widgets import Slider
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from PIL import Image
+import h5py
 
                              
-plot_curve_type = [ 'curve', 'g2', 'qiq', 'plot_stack', 'mat_curve' ]   # some particular format for curve plot 
+plot_curve_type = [ 'curve', 'g2', 'qiq', 'plot_stack', 'stack_across' ]   # some particular format for curve plot 
 plot_image_type = ['image', 'c12']           # some particular format  for image plot
 plot_surface_type = ['surface']           # some particular format  for surfce plot
 image_colors = ['jet', 'viridis', 'plasma', 'inferno', 'magma', 'cividis']
@@ -82,9 +83,17 @@ class MATPlotWidget(   ):
             elif self.mainWin.current_dataset_type =='CFN': 
                 legend_heads = self.mainWin.current_item_path  
                 #print( legend_heads)
+                self.use_extent = True
+                try:
+                    xdim_path = '/'.join(legend_heads.split('/')[:-1]) + '/x/data'
+                    ydim_path = '/'.join(legend_heads.split('/')[:-1]) + '/y/data'
+                    self.actual_xdim = self.mainWin.current_hdf5[xdim_path][:]
+                    self.actual_ydim = self.mainWin.current_hdf5[ydim_path][:]
+                except:
+                    self.use_extent = False
                 try:
                     lab_path =  '/'.join( legend_heads.split('/')[:-1] ) + '/label'
-                    self.legends =    self.mainWin.current_hdf5[ lab_path ][:]   
+                    self.legends =    self.mainWin.current_hdf5[ lab_path ][:]
                     self.uid = self.mainWin.current_base_filename
                     #self.title =  self.uid + '-' +  self.legends                    
                 except:                     
@@ -149,8 +158,8 @@ class MATPlotWidget(   ):
             Special_Plot( self.mainWin ).plot_mat_qiq( )              
         elif  plot_type =='g2':
             Special_Plot( self.mainWin ).plot_mat_g2( ) 
-        elif plot_type == 'plot_stack' :
-            sami = self.mainWin.vstack_sampling
+        elif plot_type == 'plot_stack' or plot_type == 'stack_across' :
+            #sami = self.mainWin.vstack_sampling #something is wrong with the sampling
             ys =   self.mainWin.vstack_yshift
         else:
             self.mainWin.setX_Special_flag = False
@@ -176,15 +185,18 @@ class MATPlotWidget(   ):
                         leg = self.legends[ i - self.mainWin.min_col ]
                     if isinstance(leg, list):
                         leg = leg[:]
+                    if plot_type == 'stack_across':
+                        Y = Y + (ys * self.stacked_num * (self.mainWin.max_col - self.mainWin.min_col)) 
+                        leg = str(leg) + ":" + str(self.current_acr_filename)
                    #####################################################NEW
-                    #self.mainWin.ax = self.mainWin.testplot.add_subplot(111)
-                    self.mainWin.ax.plot(X, Y, '*-', label=self.mainWin.testplot_count)
-                    self.mainWin.ax.legend()
-                    self.mainWin.canvas.draw()
-                    self.mainWin.canvas.hide()##This and the line below are required to
-                    self.mainWin.canvas.show()##circumvent maxOS incompatibilities with pyqt5
-                   #####################################################
+                    self.mainWin.ax.plot(X, Y, '*-', label=leg)
+                  #####################################################
                     j += 1
+                self.mainWin.ax.set_xlabel(self.legends[0])
+                self.mainWin.ax.legend()
+                self.mainWin.canvas.draw()
+                self.mainWin.canvas.hide()##This and the line below are required to
+                self.mainWin.canvas.show()##circumvent maxOS incompatibilities with pyqt5
             else: # for 1d data we plot a row
                 if Ns > 1:
                     Y = self.mainWin.value[ self.mainWin.min_row:self.mainWin.max_row, self.mainWin.min_col ]
@@ -197,13 +209,18 @@ class MATPlotWidget(   ):
                 if isinstance(leg, list):
                     leg = leg[:]
                 #print(X.shape, Y.shape, leg )
-                
-                self.mainWin.ax.plot(X, Y, '*-', label=self.mainWin.testplot_count)
+
+                if plot_type == 'stack_across':
+                    Y = Y + (ys * self.stacked_num)
+                    self.mainWin.ax.plot(X, Y, '*-', label = self.current_acr_filename)
+                else:
+                    self.mainWin.ax.plot(X, Y, '*-', label=self.uid)
+                self.mainWin.ax.set_xlabel(self.legends[0])
+                self.mainWin.ax.set_ylabel(leg)
                 self.mainWin.ax.legend()
                 self.mainWin.canvas.draw()
                 self.mainWin.canvas.hide()##This and the line below are required to
                 self.mainWin.canvas.show()##circumvent maxOS incompatibilities with pyqt5
-   
 
     def plot_generic_image( self, plot_type ):
         self.configure_plot_type( plot_type  )
@@ -233,18 +250,27 @@ class MATPlotWidget(   ):
                     image_min = 0.1*np.mean(np.abs( self.mainWin.value[nan_mask] ))
                 tmpData=np.where(self.mainWin.value<=0,1,self.mainWin.value)
                 self.mainWin.ax.clear()
-                self.cax = self.mainWin.ax.imshow(np.log10(self.mainWin.value),cmap=self.mainWin.colormap_string, origin="lower") 
+                if self.use_extent:
+                    self.cax = self.mainWin.ax.imshow(np.log10(self.mainWin.value),cmap=self.mainWin.colormap_string, extent=[self.actual_xdim[0], self.actual_xdim[-1], self.actual_ydim[0], self.actual_ydim[-1]], origin="lower") 
+                else:
+                    self.cax = self.mainWin.ax.imshow(np.log10(self.mainWin.value),cmap=self.mainWin.colormap_string, origin="lower") 
+                   
                 self.colorbar = self.mainWin.testplot.colorbar(self.cax, orientation='vertical')
                 self.mainWin.canvas.draw()
                 self.mainWin.canvas.hide()
                 self.mainWin.canvas.show()
             else:
                 self.mainWin.ax.clear()
-                self.cax = self.mainWin.ax.imshow(self.mainWin.value, cmap=self.mainWin.colormap_string, origin="lower") 
+                if self.use_extent:
+                    self.cax = self.mainWin.ax.imshow(self.mainWin.value, cmap=self.mainWin.colormap_string, extent=[self.actual_xdim[0], self.actual_xdim[-1], self.actual_ydim[0], self.actual_ydim[-1]], origin="lower") 
+                else:
+                    self.cax = self.mainWin.ax.imshow(self.mainWin.value, cmap=self.mainWin.colormap_string, origin="lower") 
+
                 self.colorbar = self.mainWin.testplot.colorbar(self.cax, orientation='vertical')
                 self.mainWin.canvas.draw()
                 self.mainWin.canvas.hide()
                 self.mainWin.canvas.show()
+
     def plot_surface(self):
         plot_type = 'surface'
         self.configure_plot_type(  plot_type  )
@@ -283,7 +309,31 @@ class MATPlotWidget(   ):
         except:
             pass
         self.mainWin.testplot.addItem( p )
-        
+
+    def stack_across(self, plot_type): 
+        saved_value = self.mainWin.value
+        #print("There are", self.mainWin.file_items_list.tree.topLevelItemCount(), "item(s)")
+        #for i in range(self.mainWin.file_items_list.tree.topLevelItemCount()):
+        #    print("\t", self.mainWin.file_items_list.tree.topLevelItem(i))
+        #print("This is the current item path:", self.mainWin.current_item_path)
+        #print("This is self.item", self.mainWin.item)
+        #leaf = self.mainW.file_items_list.file_array[0]
+        full_path = '/'.join(self.mainWin.current_full_filename.split('/')[0:-1])
+        self.stacked_num = 0
+        for f in self.mainWin.file_items_list.file_array:
+            self.current_acr_filename = f
+            path_name = full_path + '/' + f
+            print(path_name)
+            try:
+                current_hdf5 = h5py.File(path_name, 'r')
+                current_hdf5_item = current_hdf5[self.mainWin.current_item_path]
+                self.mainWin.value = current_hdf5_item[:]
+                self.plot_generic_curve('stack_across')
+                self.stacked_num += 1
+            except:
+                pass
+        self.mainWin.value = saved_value #resets for future plotting
+
     def curve_mouseMoved( self, pos): 
         """
         Shows the mouse position of horizontal cut plot on its crosshair label
@@ -326,9 +376,9 @@ class MATPlotWidget(   ):
 
     def plot_curve( self ):  
         try:
-            #print( 'plot curve here ------>')     
+            print( 'plot curve here ------>')     
             self.mainWin.plot_clear()
-            return self.plot_generic_curve( 'mat_curve' )
+            return self.plot_generic_curve( 'curve' )
         except:
             pass
     def plot_stack( self ):          
@@ -364,6 +414,12 @@ class MATPlotWidget(   ):
             return self.plot_generic_image( 'c12' )
         except:
             pass       
+    def plot_across( self ):
+        try:
+            print('plotting across datasets here -------->')
+            return self.stack_across( 'curve' )
+        except:
+            pass
         
         
     def bstring_to_string( bstring ):

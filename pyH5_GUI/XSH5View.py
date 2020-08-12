@@ -122,6 +122,8 @@ class mainWindow(QMainWindow):
         self.dataset_type_obj_string = self.default_dataset_type         
         # Initialise all buttons
         self.open_button = self.add_open_button()
+        self.remove_button = self.add_remove_button()
+        self.create_button = self.add_create_button()
         self.dataset_type_box = self.add_dataset_type_box()
         self.add_all_plot_buttons()
         self.setX_button = self.add_setX_button()
@@ -143,7 +145,9 @@ class mainWindow(QMainWindow):
         self.cbWidget = None
         #self.guiplot = pg.ImageView()        
         # Add the created layouts and widgets to the window
-        grid.addLayout(self.open_button,        1, 0, 1, 1,  QtCore.Qt.AlignLeft)       
+        grid.addLayout(self.open_button,        1, 0, 1, 1,  QtCore.Qt.AlignLeft) 
+        grid.addLayout(self.remove_button,      6, 0, 1, 1, QtCore.Qt.AlignLeft)
+        grid.addLayout(self.create_button,      7, 0, 1, 1, QtCore.Qt.AlignLeft)
         grid.addLayout(self.dataset_type_box,    1, 0, 1, 1, QtCore.Qt.AlignRight)
         grid.addLayout(self.clr_plot_button,     1, 4, 1, 1, QtCore.Qt.AlignLeft)
         grid.addLayout(self.setX_button, 1, 8, 1, 1,QtCore.Qt.AlignLeft)
@@ -154,7 +158,7 @@ class mainWindow(QMainWindow):
         grid.addWidget(self.filename_label, 2, 0, 1, 1)
         #filename list
         #grid.addLayout(self.file_items_list.layout, 4, 0, 3, 1)
-        grid.addLayout(self.file_items_list.datalayout, 4, 0, 3, 1)
+        grid.addLayout(self.file_items_list.datalayout, 4, 0, 2, 1)
         #data dataset table
         grid.addLayout(self.dataset_table.layout, 4, 1, 1, 8)
         # Add toolbar
@@ -169,7 +173,7 @@ class mainWindow(QMainWindow):
 		self.testplot_grid_fromRow, self.testplot_grid_fromColumn,
 		self.testplot_grid_rowSpan, self.testplot_grid_columnSpan ) 
         # attribute tabel
-        grid.addLayout(self.attribute_table.layout, 7, 0, 2, 1)
+        grid.addLayout(self.attribute_table.layout, 8, 0, 3, 1)
         #grid.addWidget(self.attribute_table, 7, 0, 2, 1 )  
         self.dev_cur_layout(   plot_type ='curve' )       
         self.dev_cur_layout(   plot_type ='image' )    
@@ -279,6 +283,18 @@ class mainWindow(QMainWindow):
         button_section.addWidget(open_file_btn)
         #button_section.addStretch(0)
         return button_section      
+    def add_remove_button(self):
+        remove_file_btn = QPushButton('Remove File')
+        remove_file_btn.clicked.connect(self.remove_file)
+        button_section = QHBoxLayout()
+        button_section.addWidget(remove_file_btn)
+        return button_section
+    def add_create_button(self):
+        create_file_btn = QPushButton('Create File')
+        create_file_btn.clicked.connect(self.create_file)
+        button_section = QHBoxLayout()
+        button_section.addWidget(create_file_btn)
+        return button_section
     def add_dataset_type_box(self):
         self.dataset_type_obj = QComboBox()
         self.dataset_type_obj.addItems( self.dataset_type_list )
@@ -310,7 +326,7 @@ class mainWindow(QMainWindow):
     def add_stack_plot_button(self):
         return self.add_generic_plot_button( plot_type = 'plot_stack',  button_name='Stack Plot')    
     def add_plot_acr_datasets_button(self):
-        return self.add_generic_plot_button( plot_type = 'stack_across', button_name='Test')
+        return self.add_generic_plot_button( plot_type = 'stack_across', button_name='Stack Across Datasets')
     def add_plot_g2_button(self):
         return self.add_generic_plot_button( plot_type = 'g2',  button_name='Plot_g2')
     def add_plot_c12_button(self):
@@ -335,7 +351,6 @@ class mainWindow(QMainWindow):
                          'image': self.PWT.plot_image,
                          'C12': self.PWT.plot_C12,
                          'plot_stack': self.PWT.plot_stack,
-                         'mat_curve': self.PWT.plot_curve,
                          } 
         mat_plot_type_dict = {'curve': self.MPWT.plot_curve,
                          'g2': self.PWT.plot_g2,
@@ -452,6 +467,19 @@ class mainWindow(QMainWindow):
         open_action.setShortcut('Ctrl+o')
         open_action.triggered.connect(self.choose_file)
         self.file_menu.addAction(open_action)
+        # Add a shortcut to copy and paste data
+        copy_data_action = QtGui.QAction('&Copy Data', self)
+        copy_data_action.setShortcut('Ctrl+c')
+        copy_data_action.triggered.connect(self.copy_data)
+        self.file_menu.addAction(copy_data_action)
+        paste_data_action = QtGui.QAction('&Paste Data', self)
+        paste_data_action.setShortcut('Ctrl+v')
+        paste_data_action.triggered.connect(self.paste_data)
+        self.file_menu.addAction(paste_data_action)
+        new_key_action = QtGui.QAction('&Add New Key', self)
+        new_key_action.setShortcut('Ctrl+n')
+        new_key_action.triggered.connect(self.create_key)
+        self.file_menu.addAction(new_key_action)
         # Add an exit button to the file menu
         exit_action = QtGui.QAction('&Exit', self)
         exit_action.setShortcut('Ctrl+Z')
@@ -565,18 +593,19 @@ class mainWindow(QMainWindow):
     def choose_file(self):
         '''
         Opens a QFileDialog window to allow the user to choose the hdf5 file they would like to view. '''
-        full_filename = QtGui.QFileDialog.getOpenFileName(self, 'Open file',
+        filenames_list = QtGui.QFileDialog.getOpenFileNames(self, 'Open file',
                 '/home/yugang/Desktop/XPCS_GUI/TestData/test.h5', filter='*.hdf5 *.h5 *.lst')[0]
-        ext = full_filename.split('/')[-1].split('.')[-1]
-        if ext == 'lst':
-            full_filename_list =  np.loadtxt( full_filename, dtype= object, )
-            group_name = full_filename.split('/')[-1]
-            if group_name not in list( self.group_name_dict.keys() ):
-                self.group_name_dict[ group_name ] = full_filename_list
-            for fp in full_filename_list:
-                self.initiate_file_open(fp, group_name=group_name)
-        else:
-            self.initiate_file_open(full_filename)
+        for f in filenames_list:
+            ext = f.split('/')[-1].split('.')[-1]
+            if ext == 'lst':
+                full_filename_list =  np.loadtxt( f, dtype= object, )
+                group_name = f.split('/')[-1]
+                if group_name not in list( self.group_name_dict.keys() ):
+                    self.group_name_dict[ group_name ] = full_filename_list
+                for fp in full_filename_list:
+                    self.initiate_file_open(fp, group_name=group_name)
+            else:
+                self.initiate_file_open(f)
             
     def initiate_file_open(self, full_filename, group_name=None):
         base_filename = full_filename.split('/')[-1]
@@ -598,9 +627,30 @@ class mainWindow(QMainWindow):
             self.dataset_table.clear()
             self.attribute_table.clear()
             print("Error opening file")
+
+    def create_file(self):
+        filename = self.file_items_list.create_file()
+        self.initiate_file_open(filename)
+
+    def remove_file(self, filename):
+        self.file_items_list.remove_file()
         
     def clear_file_items(self):
         self.file_items_list.clear()
+
+    def copy_data(self):
+        self.file_items_list.copy_data()
+
+    def paste_data(self):
+        destination = self.file_items_list.tree.currentItem().text(1)
+        item_path = self.file_items_list.tree.currentItem().text(2)
+        #self.file_items_list.remove_file()
+        self.file_items_list.paste_data(destination, item_path, self)
+        #self.initiate_file_open(destination)
+
+    def create_key(self):
+        item = self.file_items_list.tree.currentItem()
+        self.file_items_list.create_key(item.text(1), item.text(2), self)
 
     def get_selected_row_col( self ):
         selected_items = self.dataset_table.table.selectedItems()
@@ -639,7 +689,7 @@ class mainWindow(QMainWindow):
         self.item = self.file_items_list.tree.currentItem()  
         self.current_full_filename = self.item.text(1)   
         self.current_group_name = self.full_filename_dict[ self.current_full_filename  ]
-        print("in get filename selected:", self.current_full_filename)
+        #print("in get filename selected:", self.current_full_filename)
         self.current_hdf5 = h5py.File(self.current_full_filename,'r')
         self.current_base_filename = self.current_full_filename.split('/')[-1]
         self.current_item_path  = self.item.text(2)            
@@ -741,6 +791,7 @@ class mainWindow(QMainWindow):
                         self.attribute_table.table.setItem( 0, i+1, QTableWidgetItem( '%s'%s )) 
             except:
                 pass        
+        self.current_hdf5.close()
                 
     def display_attributes(self):
         # reset the value
@@ -777,6 +828,7 @@ class mainWindow(QMainWindow):
                         j+=1
                 else:
                     self.attribute_table.table.setItem(i, 1, QTableWidgetItem(str(value)))
+        self.current_hdf5.close()
 
     def item_double_clicked(self):
         '''

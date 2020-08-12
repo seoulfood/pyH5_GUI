@@ -51,6 +51,7 @@ class MATPlotWidget(   ):
         return cmap
     
     def configure_plot_title( self, plot_type ): 
+        self.mainWin.current_hdf5 = h5py.File(self.mainWin.current_full_filename, 'r')
         if plot_type in plot_curve_type :
             self.uid =  self.mainWin.current_base_filename  
             legend_heads = self.mainWin.current_item_path
@@ -66,9 +67,10 @@ class MATPlotWidget(   ):
             elif self.mainWin.current_dataset_type =='CFN': 
                 try:
                     lab_path =  '/'.join( legend_heads.split('/')[:-1] ) + '/label'
-                    legend_cols =  self.mainWin.current_hdf5[ lab_path ][:]                     
+                    legend_cols =  self.mainWin.current_hdf5[ lab_path ][:]
                     self.legends =  legend_cols
                 except:
+                    print("Getting labels didn't work")
                     pass   
                 #print('Here conf plot title')  
                 #print( self.uid, lab_path, self.legends  )
@@ -98,7 +100,8 @@ class MATPlotWidget(   ):
                     #self.title =  self.uid + '-' +  self.legends                    
                 except:                     
                     self.legends =    legend_heads
-                    self.uid = self.mainWin.current_base_filename        
+                    self.uid = self.mainWin.current_base_filename
+        self.mainWin.current_hdf5.close()
     
     def  configure_plot_type(self, plot_type ):
         self.mainWin.plot_type = plot_type
@@ -323,7 +326,7 @@ class MATPlotWidget(   ):
         for f in self.mainWin.file_items_list.file_array:
             self.current_acr_filename = f
             path_name = full_path + '/' + f
-            print(path_name)
+            #print(path_name)
             try:
                 current_hdf5 = h5py.File(path_name, 'r')
                 current_hdf5_item = current_hdf5[self.mainWin.current_item_path]
